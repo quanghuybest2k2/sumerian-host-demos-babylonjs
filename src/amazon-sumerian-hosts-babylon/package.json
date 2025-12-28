@@ -1,0 +1,31 @@
+{
+  "name": "@amazon-sumerian-hosts/babylon",
+  "version": "2.0.6",
+  "description": "",
+  "license": "MIT",
+  "author": {
+    "name": "Amazon Web Services",
+    "url": "https://aws.amazon.com",
+    "organization": true
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/aws-samples/amazon-sumerian-hosts.git"
+  },
+  "main": "./src/Babylon.js/index.js",
+  "exports": {
+    "import": "./src/Babylon.js/index.js",
+    "require": "./dist/host.babylon.js"
+  },
+  "types": "./dist/src/Babylon.js/index.d.ts",
+  "scripts": {
+  },
+  "dependencies": {
+    "@amazon-sumerian-hosts/core": "^2.0.0",
+    "aws-sdk": "^2.1094.0"
+  },
+  "peerDependencies": {
+    "@babylonjs/core": "^4.2.1",
+    "@babylonjs/loaders": "^4.2.1"
+  }
+}

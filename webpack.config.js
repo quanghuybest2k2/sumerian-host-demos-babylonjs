@@ -1,5 +1,4 @@
 const CopyPlugin = require("copy-webpack-plugin");
-const webpack = require("webpack");
 
 module.exports = {
   mode: "development",
@@ -8,26 +7,19 @@ module.exports = {
     new CopyPlugin({
       patterns: [
         { from: "assets/**/*.*", context: "src/" },
-        { from: "*.html", context: "src/" },
-        { from: "*.css", context: "src/" },
+        { from: "index.html", context: "src/" },
+        { from: "html/**/*.html", context: "src/" },
+        { from: "css/**/*.css", context: "src/" },
+        { from: "css/**/*.png", context: "src/" },
       ],
     }),
   ],
   entry: {
-    helloWorldDemo: {
-      import: "./src/helloWorldDemo.js",
+    textToSpeech: {
+      import: "./src/js/pages/textToSpeech.js",
     },
-    gesturesDemo: {
-      import: "./src/gesturesDemo.js",
-    },
-    customCharacterDemo: {
-      import: "./src/customCharacterDemo.js",
-    },
-    chatbotDemo: {
-      import: "./src/chatbotDemo.js",
-    },
-    chatbotDemo_LexV2: {
-      import: "./src/chatbotDemo_LexV2.js",
+    speechToText: {
+      import: "./src/js/pages/speechToText.js",
     },
   },
   resolve: {

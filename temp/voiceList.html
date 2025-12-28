@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Voice list</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+      }
+
+      .container {
+        max-width: 600px;
+        margin: 50px auto;
+        background-color: #fff;
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      h1 {
+        text-align: center;
+      }
+
+      ul {
+        list-style-type: none;
+        padding: 0;
+      }
+
+      li {
+        margin-bottom: 10px;
+        padding: 10px;
+        background-color: #f9f9f9;
+        border-radius: 5px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Voice list</h1>
+      <ul id="voiceList"></ul>
+    </div>
+    <script>
+      const synth = window.speechSynthesis;
+      const voiceList = document.getElementById("voiceList");
+
+      function populateVoiceList() {
+        const voices = synth.getVoices();
+        voiceList.innerHTML = "";
+        voices.forEach((voice) => {
+          const listItem = document.createElement("li");
+          listItem.textContent = `Name: ${voice.name}, Lang: ${voice.lang}`;
+          voiceList.appendChild(listItem);
+        });
+      }
+
+      populateVoiceList();
+
+      if (synth.onvoiceschanged !== undefined) {
+        synth.onvoiceschanged = populateVoiceList;
+      }
+    </script>
+  </body>
+</html>
