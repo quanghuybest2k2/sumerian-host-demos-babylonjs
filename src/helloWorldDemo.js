@@ -50,8 +50,20 @@ function initUi() {
 }
 
 function speak() {
-  const speech = document.getElementById('speechText').value;
-  host.TextToSpeechFeature.play(speech);
+  const speech = document.getElementById("speechText").value;
+    // host.TextToSpeechFeature.play(speech);
+  const synth = window.speechSynthesis;
+  const utterance = new SpeechSynthesisUtterance(speech);
+
+  utterance.onstart = () => {
+    console.log("Speech synthesis started");
+  };
+
+  utterance.onend = () => {
+    console.log("Speech synthesis ended");
+  };
+
+  synth.speak(utterance);
 }
 
 DemoUtils.loadDemo(createScene);

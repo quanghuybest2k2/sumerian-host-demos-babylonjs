@@ -4,4 +4,5 @@
 // assigned to it:
 //   - AmazonPollyReadOnlyAccess
 //   - AmazonLexRunBotsOnly
-export const cognitoIdentityPoolId = 'xxregionxx:xxx-xxx-xxx-xxx-xxx';
+export const cognitoIdentityPoolId =
+  "ap-southeast-2:xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx";
