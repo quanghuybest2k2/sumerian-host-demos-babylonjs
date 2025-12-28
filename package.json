@@ -16,10 +16,11 @@
   },
   "license": "MIT",
   "dependencies": {
-    "@amazon-sumerian-hosts/babylon": "^2.0.6",
     "@babylonjs/core": "^4.2.1",
     "@babylonjs/loaders": "^4.2.1",
     "@babylonjs/materials": "^4.2.1",
+    "aws-sdk": "^2.1628.0",
+    "compare-versions": "^6.1.0",
     "pako": "^2.1.0"
   },
   "devDependencies": {
