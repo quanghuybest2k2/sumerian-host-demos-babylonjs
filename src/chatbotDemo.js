@@ -1,163 +1,116 @@
-import { HostObject, aws as AwsFeatures } from "@amazon-sumerian-hosts/babylon";
+import { HostObject } from "@amazon-sumerian-hosts/babylon";
 import { Scene } from "@babylonjs/core/scene";
 import DemoUtils from "./demo-utils";
 import { cognitoIdentityPoolId } from "./demo-credentials.js";
 
+// Declare global variables
 let host;
 let scene;
+let transcriptText = "";
+let pollyConfig = {
+  pollyVoice: "Matthew",
+  pollyEngine: "neural",
+  pollyLanguage: "en-US", // Default language
+};
 
+// References for Polly configuration
+/**
+ * See configuration parameters for @pollyConfig
+ * @ref https://aws-samples.github.io/amazon-sumerian-hosts/AbstractTextToSpeechFeature.html
+ * Detailed info @pollyConfig
+ * @ref https://docs.aws.amazon.com/polly/latest/dg/voicelist.html
+ */
+
+// Function to create the scene
 async function createScene() {
-  // Create an empty scene. Note: Sumerian Hosts work with both
-  // right-hand or left-hand coordinate system for babylon scene
+  // Create an empty scene
   scene = new Scene();
   scene.useRightHandedSystem = true;
 
+  // Setup the scene environment
   const { shadowGenerator } = DemoUtils.setupSceneEnvironment(scene);
 
-  // ===== Configure the AWS SDK =====
-
+  // Configure AWS SDK
   AWS.config.region = cognitoIdentityPoolId.split(":")[0];
   AWS.config.credentials = new AWS.CognitoIdentityCredentials({
     IdentityPoolId: cognitoIdentityPoolId,
   });
 
-  // ===== Instantiate the Sumerian Host =====
-
-  // Edit the characterId if you would like to use one of
-  // the other pre-built host characters. Available character IDs are:
-  // "Cristine", "Fiona", "Grace", "Maya", "Jay", "Luke", "Preston", "Wes"
+  // Instantiate the Sumerian Host
   const characterId = "Luke";
-  const pollyConfig = { pollyVoice: "Matthew", pollyEngine: "neural" };
   const characterConfig = HostObject.getCharacterConfig(
     "./assets/character-assets",
     characterId
   );
   host = await HostObject.createHost(scene, characterConfig, pollyConfig);
 
-  // Tell the host to always look at the camera.
+  // Host always looks at the camera
   host.PointOfInterestFeature.setTarget(scene.activeCamera);
 
-  // Enable shadows.
+  // Enable shadows
   scene.meshes.forEach((mesh) => {
     shadowGenerator.addShadowCaster(mesh);
   });
 
-  // Initialize chatbot access. If you'd like to use this demo with a different chatbot, just change the
-  // botName and botAlias values below.
-  const lexClient = new AWS.LexRuntime();
-  const botConfig = {
-    botName: "BookTrip",
-    botAlias: "Dev",
-  };
-  lex = new AwsFeatures.LexFeature(lexClient, botConfig);
-
+  // Initialize user interface
   initUi();
-  initConversationManagement();
-  acquireMicrophoneAccess();
+  // Acquire microphone access
+  await acquireMicrophoneAccess();
 
   return scene;
 }
 
+// Function to initialize the user interface
 function initUi() {
-  // Set up interactions for UI buttons.
+  // Setup interactions for UI buttons
   document.getElementById("startButton").onclick = () => startMainExperience();
   document.getElementById("enableMicButton").onclick = () =>
     acquireMicrophoneAccess();
+
+  // Push to Speak button
+  const pushButton = document.getElementById("pushButton");
+  /**
+   * @event onmousedown and @event onmouseup for desktop
+   * @event ontouchstart and @event ontouchend for mobile devices
+   */
+  pushButton.onmousedown = pushButton.ontouchstart = () => startListening();
+  pushButton.onmouseup = pushButton.ontouchend = () => stopListening();
 }
 
-/**
- * Triggered when the user clicks the initial "start" button.
- */
+// Start the main experience
 function startMainExperience() {
   showUiScreen("chatbotUiScreen");
-
-  // Speak a greeting to the user.
-  host.TextToSpeechFeature.play(
-    `Hello. How can I help?  You can say things like, "I'd like to rent a car," or, "Help me book a hotel".`
-  );
 }
 
-// ===== Chatbot functions =====
-
-let messageContainerEl;
-let transcriptTextEl;
-let lex;
-
-function initConversationManagement() {
-  // Use talk button events to start and stop recording.
-  const talkButton = document.getElementById("talkButton");
-  talkButton.onmousedown = () => lex.beginVoiceRecording();
-  talkButton.onmouseup = () => lex.endVoiceRecording();
-
-  // Use events dispatched by the LexFeature to present helpful user messages.
-  const { EVENTS } = AwsFeatures.LexFeature;
-  lex.listenTo(EVENTS.lexResponseReady, (response) =>
-    handleLexResponse(response)
-  );
-  lex.listenTo(EVENTS.recordBegin, () => hideUserMessages());
-  lex.listenTo(EVENTS.recordEnd, () => displayProcessingMessage());
-
-  // Create convenience references to DOM elements.
-  messageContainerEl = document.getElementById("userMessageContainer");
-  transcriptTextEl = document.getElementById("transcriptText");
-}
-
-/**
- * Triggered whenever a response is received from the Lex chatbot.
- * @param {object} response An object representing the Lex response. For a
- * detailed description of this object's shape, see the documentation for the
- * "data" callback argument described here:
- * {@link https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/LexRuntime.html#postContent-property}
- */
-function handleLexResponse(response) {
-  // Remove "processing" CSS class from message container.
-  messageContainerEl.classList.remove("processing");
-
-  // Display the user's speech input transcript.
-  displaySpeechInputTranscript(response.inputTranscript);
-
-  // Have the host speak the response from Lex if one was provided.
-  if (response.message) {
-    host.TextToSpeechFeature.play(response.message);
-  } else if (response.dialogState === "ReadyForFulfillment") {
-    host.TextToSpeechFeature.play(
-      "OK. Your reservation is complete. Have a great day."
-    );
-    // Wave after a short delay.
-    setTimeout(() => {
-      host.GestureFeature.playGesture("Gesture", "wave");
-    }, 2000);
-  }
-}
-
+// Display transcript of speech input
 function displaySpeechInputTranscript(text) {
+  const transcriptTextEl = document.getElementById("transcriptText");
+  const messageContainerEl = document.getElementById("userMessageContainer");
   transcriptTextEl.innerText = `“${text}”`;
   messageContainerEl.classList.add("showingMessage");
 }
 
+// Display processing message
 function displayProcessingMessage() {
+  const messageContainerEl = document.getElementById("userMessageContainer");
   messageContainerEl.classList.add("processing");
 }
 
-function hideUserMessages() {
-  messageContainerEl.classList.remove("showingMessage");
+// Hide processing message
+function hideProcessingMessage() {
+  const messageContainerEl = document.getElementById("userMessageContainer");
+  messageContainerEl.classList.remove("processing");
 }
 
-/**
- * Attempts to enable microphone access for Lex, triggering a browser permissions
- * prompt if necessary.
- * @returns {Promise} A Promise which resolves once mic access is allowed or
- * denied by the user or browser.
- */
+// Acquire microphone access
 async function acquireMicrophoneAccess() {
   showUiScreen("micInitScreen");
 
   try {
-    await lex.enableMicInput();
+    await navigator.mediaDevices.getUserMedia({ audio: true });
+    localStorage.setItem("microphoneAccess", "granted");
     showUiScreen("startScreen");
   } catch (e) {
-    // The user or browser denied mic access. Display appropriate messaging
-    // to the user.
     if (e.message === "Permission dismissed") {
       showUiScreen("micPermissionDismissedScreen");
     } else {
@@ -166,12 +119,17 @@ async function acquireMicrophoneAccess() {
   }
 }
 
-// ===== Utility functions =====
+// Check microphone access on page load
+function checkMicrophoneAccess() {
+  const micAccess = localStorage.getItem("microphoneAccess");
+  if (micAccess === "granted") {
+    startMainExperience();
+  } else {
+    acquireMicrophoneAccess();
+  }
+}
 
-/**
- * Makes the specified UI screen visible and hides all other UI screens.
- * @param {string} id HTMLElement id of the screen to display.
- */
+// Show the specified UI screen
 function showUiScreen(id) {
   document.querySelectorAll("#uiScreens .screen").forEach((element) => {
     const isTargetScreen = element.id === id;
@@ -179,11 +137,7 @@ function showUiScreen(id) {
   });
 }
 
-/**
- * Shows or hides an HTML element.
- * @param {string} id HTMLElement id
- * @param {boolean} visible `true` shows the element. `false` hides it.
- */
+// Set the visibility of a UI element
 function setElementVisibility(id, visible) {
   const element = document.getElementById(id);
   if (visible) {
@@ -193,4 +147,73 @@ function setElementVisibility(id, visible) {
   }
 }
 
+// Load the demo and initialize the scene
 DemoUtils.loadDemo(createScene);
+
+// Start listening
+function startListening() {
+  if (recognition.state === undefined) {
+    finalTranscript = "";
+    recognition.start();
+    console.log("Listening started...");
+    displayProcessingMessage();
+  }
+}
+
+// Stop listening
+function stopListening() {
+  recognition.stop();
+  console.log("Listening stopped.");
+}
+
+// Speech recognition setup
+const SpeechRecognition =
+  window.SpeechRecognition || window.webkitSpeechRecognition;
+const recognition = new SpeechRecognition();
+let finalTranscript = "";
+
+// Set properties for speech recognition
+recognition.lang = "en-US";
+recognition.continuous = true;
+recognition.interimResults = true;
+
+// Handle speech recognition results
+recognition.onresult = (event) => {
+  let interimTranscript = "";
+  for (let i = event.resultIndex; i < event.results.length; ++i) {
+    if (event.results[i].isFinal) {
+      finalTranscript += event.results[i][0].transcript;
+    } else {
+      interimTranscript += event.results[i][0].transcript;
+    }
+  }
+  transcriptText = finalTranscript + interimTranscript;
+};
+
+// Handle speech recognition end event
+recognition.onend = () => {
+  console.log("Recognition ended.");
+  hideProcessingMessage();
+  console.log(transcriptText);
+  // Display the transcribed text on screen
+  displaySpeechInputTranscript(transcriptText);
+  readText(transcriptText);
+};
+
+// Read what was heard
+function readText(text) {
+  text === ""
+    ? (() => {
+        host.TextToSpeechFeature.play(
+          "Sorry, I don't understand what you say. Please try again."
+        );
+        // Defense after a short delay.
+        setTimeout(() => {
+          host.GestureFeature.playGesture("Gesture", "defense");
+        }, 1000);
+      })()
+    : host.TextToSpeechFeature.play(text);
+}
+
+// Check microphone access on page load
+window.onload = checkMicrophoneAccess;
