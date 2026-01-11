@@ -475,8 +475,8 @@ class HostObject extends CoreHostObject {
         {
           name: "Viseme",
           animation: "visemes",
-          blendTime: 0.05,
-          decayRate: { amount: 0.5, seconds: 0.05 },
+          blendTime: 0.1,
+          decayRate: { amount: 0.5, seconds: 0.1 },
         },
       ],
     };
@@ -490,7 +490,7 @@ class HostObject extends CoreHostObject {
         },
       ],
     };
-    host.addFeature(LipsyncFeature, false, visemeOptions, talkingOptions);
+    host.addFeature(LipsyncFeature, false, visemeOptions, talkingOptions, 0.15);
 
     // Set up Gestures
     host.addFeature(GestureFeature, false, {
